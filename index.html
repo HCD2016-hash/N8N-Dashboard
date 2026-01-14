@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N8N Executions Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            padding: 15px;
+            font-size: 13px;
+        }
+        
+        .header {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 16px;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        
+        .settings-btn {
+            float: right;
+            padding: 4px 10px;
+            font-size: 11px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .settings-btn:hover {
+            background: #5a6268;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            clear: both;
+        }
+        
+        .filter-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn:hover {
+            background: #f8f9fa;
+        }
+        
+        .filter-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        
+        .execution {
+            background: white;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border-left: 3px solid #ddd;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .execution:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transform: translateX(2px);
+        }
+        
+        .execution.success {
+            border-left-color: #28a745;
+        }
+        
+        .execution.error {
+            border-left-color: #dc3545;
+        }
+        
+        .execution.running {
+            border-left-color: #ffc107;
+        }
+        
+        .execution.waiting {
+            border-left-color: #6c757d;
+        }
+        
+        .execution-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        
+        .workflow-name {
+            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status.running {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.waiting {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .execution-meta {
+            display: flex;
+            gap: 15px;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        
+        .refresh-btn {
+            padding: 6px 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .refresh-btn:hover {
+            background: #0056b3;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>N8N Workflow Executions</h1>
+        <button class="settings-btn" onclick="resetApiKey()">⚙ Reset API Key</button>
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="success">Success</button>
+            <button class="filter-btn" data-filter="error">Failed</button>
+            <button class="filter-btn" data-filter="running">Running</button>
+            <div class="search-box">
+                <input type="text" id="search" placeholder="Search workflows...">
+            </div>
+            <button class="refresh-btn" onclick="loadExecutions()">↻ Refresh</button>
+        </div>
+    </div>
+    
+    <div id="error-container"></div>
+    <div id="executions-container">
+        <div class="loading">Loading executions...</div>
+    </div>
+    
+    <script>
+        const N8N_URL = 'https://n8n-hcd.ngrok.dev';
+        let API_KEY = localStorage.getItem('n8n_api_key');
+        let allExecutions = [];
+        let currentFilter = 'all';
+        
+        // Check if API key exists, if not, prompt for it
+        if (!API_KEY) {
+            API_KEY = prompt('Enter your N8N API key:\n\n(Find it in N8N → Settings → API)');
+            if (API_KEY) {
+                localStorage.setItem('n8n_api_key', API_KEY);
+            } else {
+                document.getElementById('executions-container').innerHTML = 
+                    '<div class="error-message"><strong>API key required.</strong> Refresh the page to enter your API key.</div>';
+            }
+        }
+        
+        function resetApiKey() {
+            if (confirm('Remove saved API key and reload?')) {
+                localStorage.removeItem('n8n_api_key');
+                location.reload();
+            }
+        }
+        
+        async function loadExecutions() {
+            if (!API_KEY) return;
+            
+            const container = document.getElementById('executions-container');
+            const errorContainer = document.getElementById('error-container');
+            container.innerHTML = '<div class="loading">Loading executions...</div>';
+            errorContainer.innerHTML = '';
+            
+            try {
+                const response = await fetch(`${N8N_URL}/api/v1/executions?limit=50`, {
+                    headers: {
+                        'X-N8N-API-KEY': API_KEY
+                    }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Invalid API key. Click "Reset API Key" to enter a new one.');
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                allExecutions = data.data || [];
+                renderExecutions();
+            } catch (error) {
+                console.error('Error loading executions:', error);
+                errorContainer.innerHTML = `
+                    <div class="error-message">
+                        <strong>Error loading executions:</strong> ${error.message}
+                    </div>
+                `;
+                container.innerHTML = '';
+            }
+        }
+        
+        function renderExecutions() {
+            const container = document.getElementById('executions-container');
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            
+            let filtered = allExecutions.filter(ex => {
+                const matchesFilter = currentFilter === 'all' || 
+                    (ex.finished === true && ex.stoppedAt && currentFilter === 'success') ||
+                    (ex.finished === true && !ex.stoppedAt && currentFilter === 'error') ||
+                    (ex.finished === false && currentFilter === 'running');
+                
+                const matchesSearch = !searchTerm || 
+                    ex.workflowData?.name?.toLowerCase().includes(searchTerm);
+                
+                return matchesFilter && matchesSearch;
+            });
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="no-results">No executions found</div>';
+                return;
+            }
+            
+            container.innerHTML = filtered.map(ex => {
+                const status = getExecutionStatus(ex);
+                const duration = ex.stoppedAt ? 
+                    Math.round((new Date(ex.stoppedAt) - new Date(ex.startedAt)) / 1000) : null;
+                
+                return `
+                    <div class="execution ${status}" onclick="openExecution('${ex.id}')">
+                        <div class="execution-header">
+                            <div class="workflow-name">${escapeHtml(ex.workflowData?.name || 'Unknown Workflow')}</div>
+                            <div class="status ${status}">${status}</div>
+                        </div>
+                        <div class="execution-meta">
+                            <div class="meta-item">
+                                🕐 ${formatTime(ex.startedAt)}
+                            </div>
+                            ${duration ? `<div class="meta-item">⏱ ${duration}s</div>` : ''}
+                            <div class="meta-item">
+                                #${ex.id.slice(0, 8)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function getExecutionStatus(execution) {
+            if (!execution.finished) return 'running';
+            if (execution.stoppedAt) return 'success';
+            return 'error';
+        }
+        
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+            
+            return date.toLocaleString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function openExecution(id) {
+            window.open(`${N8N_URL}/execution/${id}`, '_blank');
+        }
+        
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderExecutions();
+            });
+        });
+        
+        // Search
+        document.getElementById('search').addEventListener('input', renderExecutions);
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadExecutions, 30000);
+        
+        // Initial load
+        if (API_KEY) {
+            loadExecutions();
+        }
+    </script>
+</body>
+</html>
