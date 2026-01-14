@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>N8N Execution Monitor</title>
-    <!-- Missive Integration -->
     <link href="https://integrations.missiveapp.com/missive.css" rel="stylesheet">
-    <script src="https://integrations.missiveapp.com/missive.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -16,7 +14,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         :root {
             --bg-primary: #0a0e14;
             --bg-secondary: #151922;
@@ -29,7 +27,7 @@
             --text-secondary: #8b92a0;
             --border: #2a3140;
         }
-        
+
         body {
             font-family: 'JetBrains Mono', monospace;
             background: var(--bg-primary);
@@ -38,12 +36,101 @@
             overflow-x: hidden;
             line-height: 1.6;
         }
-        
+
+        .hidden { display: none !important; }
+
+        /* Auth Screen */
+        .auth {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .auth-logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .auth-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-green);
+            margin-bottom: 8px;
+            font-family: 'Space Mono', monospace;
+            letter-spacing: 1px;
+        }
+
+        .auth-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            max-width: 280px;
+        }
+
+        .auth-input {
+            width: 100%;
+            max-width: 300px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 2px rgba(0, 255, 159, 0.1);
+        }
+
+        .auth-btn {
+            width: 100%;
+            max-width: 300px;
+            padding: 14px;
+            background: var(--accent-green);
+            border: none;
+            border-radius: 4px;
+            color: var(--bg-primary);
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .auth-btn:hover {
+            background: #00e090;
+        }
+
+        .auth-help {
+            margin-top: 16px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .auth-help a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        .auth-help a:hover {
+            text-decoration: underline;
+        }
+
+        /* Main App */
         @keyframes scanline {
             0% { transform: translateY(-100%); }
             100% { transform: translateY(100vh); }
         }
-        
+
         .scanline {
             position: fixed;
             top: 0;
@@ -56,13 +143,13 @@
             pointer-events: none;
             z-index: 1000;
         }
-        
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
         }
-        
+
         .header {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
@@ -72,7 +159,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .header::before {
             content: '';
             position: absolute;
@@ -83,7 +170,7 @@
             background: linear-gradient(90deg, transparent, rgba(0, 255, 159, 0.05));
             pointer-events: none;
         }
-        
+
         .header h1 {
             font-size: 18px;
             font-weight: 700;
@@ -93,13 +180,13 @@
             margin-bottom: 5px;
             font-family: 'Space Mono', monospace;
         }
-        
+
         .header .subtitle {
             font-size: 11px;
             color: var(--text-secondary);
             letter-spacing: 1px;
         }
-        
+
         .controls {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) 2fr auto;
@@ -107,7 +194,7 @@
             margin-bottom: 20px;
             align-items: center;
         }
-        
+
         .filter-btn {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
@@ -123,7 +210,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .filter-btn::before {
             content: '';
             position: absolute;
@@ -135,27 +222,27 @@
             transition: left 0.3s ease;
             z-index: 0;
         }
-        
+
         .filter-btn:hover::before {
             left: 0;
         }
-        
+
         .filter-btn:hover {
             color: var(--bg-primary);
             border-color: var(--accent-green);
         }
-        
+
         .filter-btn span {
             position: relative;
             z-index: 1;
         }
-        
+
         .filter-btn.active {
             background: var(--accent-green);
             color: var(--bg-primary);
             border-color: var(--accent-green);
         }
-        
+
         .search-box input {
             width: 100%;
             background: var(--bg-secondary);
@@ -166,17 +253,17 @@
             font-size: 12px;
             transition: all 0.2s ease;
         }
-        
+
         .search-box input:focus {
             outline: none;
             border-color: var(--accent-green);
             box-shadow: 0 0 0 2px rgba(0, 255, 159, 0.1);
         }
-        
+
         .search-box input::placeholder {
             color: var(--text-secondary);
         }
-        
+
         .refresh-btn {
             background: var(--bg-tertiary);
             border: 1px solid var(--accent-blue);
@@ -190,21 +277,21 @@
             letter-spacing: 1px;
             transition: all 0.2s ease;
         }
-        
+
         .refresh-btn:hover {
             background: var(--accent-blue);
             color: var(--bg-primary);
         }
-        
+
         .refresh-btn.loading {
             animation: pulse 1s ease infinite;
         }
-        
+
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
-        
+
         .settings-btn {
             position: absolute;
             top: 20px;
@@ -220,12 +307,12 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        
+
         .settings-btn:hover {
             border-color: var(--accent-red);
             color: var(--accent-red);
         }
-        
+
         .execution {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
@@ -237,7 +324,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .execution::after {
             content: '';
             position: absolute;
@@ -248,42 +335,42 @@
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03));
             transition: right 0.3s ease;
         }
-        
+
         .execution:hover::after {
             right: 0;
         }
-        
+
         .execution:hover {
             border-left-width: 5px;
             transform: translateX(2px);
         }
-        
+
         .execution.success {
             border-left-color: var(--accent-green);
         }
-        
+
         .execution.error {
             border-left-color: var(--accent-red);
         }
-        
+
         .execution.running {
             border-left-color: var(--accent-yellow);
         }
-        
+
         .execution-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
         }
-        
+
         .workflow-name {
             font-size: 13px;
             font-weight: 600;
             color: var(--text-primary);
             letter-spacing: 0.5px;
         }
-        
+
         .status {
             font-size: 9px;
             font-weight: 700;
@@ -293,45 +380,45 @@
             letter-spacing: 1px;
             font-family: 'Space Mono', monospace;
         }
-        
+
         .status.success {
             background: rgba(0, 255, 159, 0.15);
             color: var(--accent-green);
             border: 1px solid var(--accent-green);
         }
-        
+
         .status.error {
             background: rgba(255, 0, 85, 0.15);
             color: var(--accent-red);
             border: 1px solid var(--accent-red);
         }
-        
+
         .status.running {
             background: rgba(255, 221, 0, 0.15);
             color: var(--accent-yellow);
             border: 1px solid var(--accent-yellow);
             animation: pulse 1.5s ease infinite;
         }
-        
+
         .execution-meta {
             display: flex;
             gap: 20px;
             font-size: 11px;
             color: var(--text-secondary);
         }
-        
+
         .meta-item {
             display: flex;
             align-items: center;
             gap: 6px;
         }
-        
+
         .meta-item::before {
             content: '▸';
             color: var(--accent-blue);
             font-size: 8px;
         }
-        
+
         .loading-container {
             text-align: center;
             padding: 60px 20px;
@@ -340,7 +427,7 @@
             letter-spacing: 2px;
             text-transform: uppercase;
         }
-        
+
         .error-message {
             background: rgba(255, 0, 85, 0.1);
             border: 1px solid var(--accent-red);
@@ -351,7 +438,7 @@
             font-size: 12px;
             font-family: 'JetBrains Mono', monospace;
         }
-        
+
         .no-results {
             text-align: center;
             padding: 60px 20px;
@@ -360,7 +447,7 @@
             letter-spacing: 2px;
             text-transform: uppercase;
         }
-        
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -371,22 +458,37 @@
                 transform: translateY(0);
             }
         }
-        
+
         .execution {
             animation: fadeIn 0.3s ease;
         }
     </style>
 </head>
 <body>
+
+<!-- Auth Screen -->
+<div id="auth" class="auth">
+    <div class="auth-logo">⚡</div>
+    <h1 class="auth-title">N8N Monitor</h1>
+    <p class="auth-subtitle">Enter your N8N API key to view workflow executions.</p>
+    <input type="password" id="token-input" class="auth-input" placeholder="Paste your API key">
+    <button id="connect-btn" class="auth-btn">Connect</button>
+    <p class="auth-help">
+        Find your key in N8N: Settings → API
+    </p>
+</div>
+
+<!-- Main App -->
+<div id="app" class="hidden">
     <div class="scanline"></div>
-    
+
     <div class="container">
         <div class="header">
-            <button class="settings-btn" onclick="resetApiKey()">Reset Key</button>
+            <button class="settings-btn" id="logout-btn">Disconnect</button>
             <h1>N8N Execution Monitor</h1>
             <div class="subtitle">Real-time workflow execution tracking</div>
         </div>
-        
+
         <div class="controls">
             <button class="filter-btn active" data-filter="all"><span>All</span></button>
             <button class="filter-btn" data-filter="success"><span>Success</span></button>
@@ -395,249 +497,247 @@
             <div class="search-box">
                 <input type="text" id="search" placeholder="SEARCH WORKFLOWS...">
             </div>
-            <button class="refresh-btn" onclick="loadExecutions()">↻ REFRESH</button>
+            <button class="refresh-btn" id="refresh-btn">↻ REFRESH</button>
         </div>
-        
+
         <div id="error-container"></div>
         <div id="executions-container">
-            <div class="loading-container">Initializing monitor...</div>
+            <div class="loading-container">Loading executions...</div>
         </div>
     </div>
-    
-    <script>
-        const N8N_URL = 'https://n8n-hcd.ngrok.dev';
-        let API_KEY = null;
-        let allExecutions = [];
-        let currentFilter = 'all';
+</div>
 
-        // Detect if running inside Missive iframe
-        const inMissive = typeof Missive !== 'undefined' && Missive.storeGet;
+<script src="https://integrations.missiveapp.com/missive.js"></script>
+<script>
+    const N8N_URL = 'https://n8n-hcd.ngrok.dev';
+    let API_KEY = null;
+    let allExecutions = [];
+    let currentFilter = 'all';
 
-        // Storage abstraction - uses Missive in iframe, localStorage otherwise
-        async function storageGet(key) {
-            if (inMissive) {
-                return await Missive.storeGet(key);
-            }
-            return localStorage.getItem(key);
-        }
+    // Elements
+    const $ = id => document.getElementById(id);
+    const auth = $('auth');
+    const app = $('app');
 
-        async function storageSet(key, value) {
-            if (inMissive) {
-                await Missive.storeSet(key, value);
-            } else if (value === null) {
-                localStorage.removeItem(key);
+    // Init
+    async function init() {
+        try {
+            API_KEY = typeof Missive !== 'undefined'
+                ? await Missive.storeGet('n8n_api_key')
+                : localStorage.getItem('n8n_api_key');
+
+            if (API_KEY) {
+                showApp();
+                await loadExecutions();
             } else {
-                localStorage.setItem(key, value);
+                showAuth();
             }
+        } catch (e) {
+            console.error(e);
+            showAuth();
         }
+    }
 
-        // Prompt for API key - uses Missive form in iframe, native prompt otherwise
-        async function promptForApiKey() {
-            let key = null;
+    function showAuth() {
+        auth.classList.remove('hidden');
+        app.classList.add('hidden');
+    }
 
-            if (inMissive) {
-                const result = await Missive.openForm({
-                    name: 'N8N API Key',
-                    fields: [
-                        { type: 'input', data: {
-                            name: 'api_key',
-                            placeholder: 'Enter your N8N API key',
-                            required: true
-                        }},
-                        { type: 'html', data: {
-                            html: '<p style="color: #8b92a0; font-size: 11px; margin-top: 8px;">Find this in N8N: Settings → API</p>'
-                        }}
-                    ],
-                    buttons: [
-                        { type: 'cancel', label: 'Cancel' },
-                        { type: 'submit', label: 'Save' }
-                    ]
-                });
-                key = result?.api_key || null;
-            } else {
-                key = prompt('Enter your N8N API key:\n\n(Settings → API in N8N)');
-            }
+    function showApp() {
+        auth.classList.add('hidden');
+        app.classList.remove('hidden');
+    }
 
-            if (key) {
-                await storageSet('n8n_api_key', key);
-            }
-            return key;
-        }
+    // Auth - Connect
+    $('connect-btn').onclick = async () => {
+        const key = $('token-input').value.trim();
+        if (!key) return;
 
-        // Reset API key confirmation
-        async function resetApiKey() {
-            let confirmed = false;
+        $('connect-btn').textContent = 'Connecting...';
 
-            if (inMissive) {
-                const result = await Missive.openForm({
-                    name: 'Reset API Key',
-                    fields: [
-                        { type: 'html', data: { html: '<p>Remove saved API key and reload?</p>' }}
-                    ],
-                    buttons: [
-                        { type: 'cancel', label: 'Cancel' },
-                        { type: 'submit', label: 'Reset' }
-                    ]
-                });
-                confirmed = result !== null;
-            } else {
-                confirmed = confirm('Remove saved API key and reload?');
-            }
-
-            if (confirmed) {
-                await storageSet('n8n_api_key', null);
-                location.reload();
-            }
-        }
-
-        // Initialize - load API key from storage
-        async function init() {
-            API_KEY = await storageGet('n8n_api_key');
-
-            if (!API_KEY) {
-                API_KEY = await promptForApiKey();
-                if (!API_KEY) {
-                    document.getElementById('executions-container').innerHTML =
-                        '<div class="error-message">API key required. Refresh to enter key.</div>';
-                    return;
-                }
-            }
-
-            loadExecutions();
-        }
-        
-        async function loadExecutions() {
-            if (!API_KEY) return;
-            
-            const container = document.getElementById('executions-container');
-            const errorContainer = document.getElementById('error-container');
-            const refreshBtn = document.querySelector('.refresh-btn');
-            
-            container.innerHTML = '<div class="loading-container">Loading executions...</div>';
-            errorContainer.innerHTML = '';
-            refreshBtn.classList.add('loading');
-            
-            try {
-                const response = await fetch(`${N8N_URL}/api/v1/executions?limit=50`, {
-                    headers: {
-                        'X-N8N-API-KEY': API_KEY
-                    }
-                });
-                
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        throw new Error('Invalid API key. Click "Reset Key" to enter a new one.');
-                    }
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                allExecutions = data.data || [];
-                renderExecutions();
-            } catch (error) {
-                console.error('Error:', error);
-                errorContainer.innerHTML = `
-                    <div class="error-message">
-                        <strong>ERROR:</strong> ${error.message}
-                    </div>
-                `;
-                container.innerHTML = '';
-            } finally {
-                refreshBtn.classList.remove('loading');
-            }
-        }
-        
-        function renderExecutions() {
-            const container = document.getElementById('executions-container');
-            const searchTerm = document.getElementById('search').value.toLowerCase();
-            
-            let filtered = allExecutions.filter(ex => {
-                const matchesFilter = currentFilter === 'all' || 
-                    (ex.finished === true && ex.stoppedAt && currentFilter === 'success') ||
-                    (ex.finished === true && !ex.stoppedAt && currentFilter === 'error') ||
-                    (ex.finished === false && currentFilter === 'running');
-                
-                const matchesSearch = !searchTerm || 
-                    ex.workflowData?.name?.toLowerCase().includes(searchTerm);
-                
-                return matchesFilter && matchesSearch;
+        try {
+            // Test the API key
+            const res = await fetch(`${N8N_URL}/api/v1/executions?limit=1`, {
+                headers: { 'X-N8N-API-KEY': key }
             });
-            
-            if (filtered.length === 0) {
-                container.innerHTML = '<div class="no-results">No executions found</div>';
-                return;
+
+            if (!res.ok) throw new Error('Invalid API key');
+
+            // Save the key
+            if (typeof Missive !== 'undefined') {
+                await Missive.storeSet('n8n_api_key', key);
+            } else {
+                localStorage.setItem('n8n_api_key', key);
             }
-            
-            container.innerHTML = filtered.map((ex, index) => {
-                const status = getExecutionStatus(ex);
-                const duration = ex.stoppedAt ? 
-                    Math.round((new Date(ex.stoppedAt) - new Date(ex.startedAt)) / 1000) : null;
-                
-                return `
-                    <div class="execution ${status}" onclick="openExecution('${ex.id}')" style="animation-delay: ${index * 0.05}s">
-                        <div class="execution-header">
-                            <div class="workflow-name">${escapeHtml(ex.workflowData?.name || 'Unknown Workflow')}</div>
-                            <div class="status ${status}">${status}</div>
-                        </div>
-                        <div class="execution-meta">
-                            <div class="meta-item">${formatTime(ex.startedAt)}</div>
-                            ${duration ? `<div class="meta-item">${duration}s</div>` : ''}
-                            <div class="meta-item">ID: ${ex.id.slice(0, 8)}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+
+            API_KEY = key;
+            showApp();
+            await loadExecutions();
+        } catch (e) {
+            alert('Invalid API key or N8N not reachable');
+            $('connect-btn').textContent = 'Connect';
         }
-        
-        function getExecutionStatus(execution) {
-            if (!execution.finished) return 'running';
-            if (execution.stoppedAt) return 'success';
-            return 'error';
+    };
+
+    // Logout / Disconnect
+    $('logout-btn').onclick = async () => {
+        if (!confirm('Disconnect and clear API key?')) return;
+
+        if (typeof Missive !== 'undefined') {
+            await Missive.storeSet('n8n_api_key', null);
+        } else {
+            localStorage.removeItem('n8n_api_key');
         }
-        
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            const now = new Date();
-            const diffMs = now - date;
-            const diffMins = Math.floor(diffMs / 60000);
-            
-            if (diffMins < 1) return 'Just now';
-            if (diffMins < 60) return `${diffMins}m ago`;
-            if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
-            
-            return date.toLocaleString('en-US', { 
-                month: 'short', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+
+        API_KEY = null;
+        showAuth();
+        $('token-input').value = '';
+    };
+
+    async function loadExecutions() {
+        if (!API_KEY) return;
+
+        const container = $('executions-container');
+        const errorContainer = $('error-container');
+        const refreshBtn = $('refresh-btn');
+
+        container.innerHTML = '<div class="loading-container">Loading executions...</div>';
+        errorContainer.innerHTML = '';
+        refreshBtn.classList.add('loading');
+
+        try {
+            const response = await fetch(`${N8N_URL}/api/v1/executions?limit=50`, {
+                headers: {
+                    'X-N8N-API-KEY': API_KEY
+                }
             });
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error('Invalid API key. Click "Disconnect" to enter a new one.');
+                }
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            allExecutions = data.data || [];
+            renderExecutions();
+        } catch (error) {
+            console.error('Error:', error);
+            errorContainer.innerHTML = `
+                <div class="error-message">
+                    <strong>ERROR:</strong> ${error.message}
+                </div>
+            `;
+            container.innerHTML = '';
+        } finally {
+            refreshBtn.classList.remove('loading');
         }
-        
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+    }
+
+    function renderExecutions() {
+        const container = $('executions-container');
+        const searchTerm = $('search').value.toLowerCase();
+
+        let filtered = allExecutions.filter(ex => {
+            const matchesFilter = currentFilter === 'all' ||
+                (ex.finished === true && ex.stoppedAt && currentFilter === 'success') ||
+                (ex.finished === true && !ex.stoppedAt && currentFilter === 'error') ||
+                (ex.finished === false && currentFilter === 'running');
+
+            const matchesSearch = !searchTerm ||
+                ex.workflowData?.name?.toLowerCase().includes(searchTerm);
+
+            return matchesFilter && matchesSearch;
+        });
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="no-results">No executions found</div>';
+            return;
         }
-        
-        function openExecution(id) {
+
+        container.innerHTML = filtered.map((ex, index) => {
+            const status = getExecutionStatus(ex);
+            const duration = ex.stoppedAt ?
+                Math.round((new Date(ex.stoppedAt) - new Date(ex.startedAt)) / 1000) : null;
+
+            return `
+                <div class="execution ${status}" onclick="openExecution('${ex.id}')" style="animation-delay: ${index * 0.05}s">
+                    <div class="execution-header">
+                        <div class="workflow-name">${escapeHtml(ex.workflowData?.name || 'Unknown Workflow')}</div>
+                        <div class="status ${status}">${status}</div>
+                    </div>
+                    <div class="execution-meta">
+                        <div class="meta-item">${formatTime(ex.startedAt)}</div>
+                        ${duration ? `<div class="meta-item">${duration}s</div>` : ''}
+                        <div class="meta-item">ID: ${ex.id.slice(0, 8)}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function getExecutionStatus(execution) {
+        if (!execution.finished) return 'running';
+        if (execution.stoppedAt) return 'success';
+        return 'error';
+    }
+
+    function formatTime(timestamp) {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+
+        return date.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function openExecution(id) {
+        if (typeof Missive !== 'undefined') {
+            Missive.openURL(`${N8N_URL}/execution/${id}`);
+        } else {
             window.open(`${N8N_URL}/execution/${id}`, '_blank');
         }
-        
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentFilter = btn.dataset.filter;
-                renderExecutions();
-            });
+    }
+
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.filter;
+            renderExecutions();
         });
-        
-        document.getElementById('search').addEventListener('input', renderExecutions);
+    });
 
-        setInterval(loadExecutions, 30000);
+    // Search
+    $('search').addEventListener('input', renderExecutions);
 
-        // Initialize the app
-        init();
-    </script>
+    // Refresh button
+    $('refresh-btn').onclick = loadExecutions;
+
+    // Auto-refresh every 30s
+    setInterval(() => {
+        if (API_KEY) loadExecutions();
+    }, 30000);
+
+    // Start
+    init();
+</script>
 </body>
 </html>
