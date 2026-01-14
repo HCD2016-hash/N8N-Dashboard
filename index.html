@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>N8N Execution Monitor</title>
+    <!-- Missive Integration -->
+    <link href="https://integrations.missiveapp.com/missive.css" rel="stylesheet">
+    <script src="https://integrations.missiveapp.com/missive.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -403,25 +406,70 @@
     
     <script>
         const N8N_URL = 'https://n8n-hcd.ngrok.dev';
-        let API_KEY = localStorage.getItem('n8n_api_key');
+        let API_KEY = null;
         let allExecutions = [];
         let currentFilter = 'all';
-        
-        if (!API_KEY) {
-            API_KEY = prompt('Enter your N8N API key:\n\n(Settings → API in N8N)');
-            if (API_KEY) {
-                localStorage.setItem('n8n_api_key', API_KEY);
-            } else {
-                document.getElementById('executions-container').innerHTML = 
-                    '<div class="error-message">API key required. Refresh to enter key.</div>';
+
+        // Missive-compatible form to get API key (works in iframe)
+        async function promptForApiKey() {
+            const result = await Missive.openForm({
+                name: 'N8N API Key',
+                fields: [
+                    { type: 'input', data: {
+                        name: 'api_key',
+                        placeholder: 'Enter your N8N API key',
+                        required: true
+                    }},
+                    { type: 'html', data: {
+                        html: '<p style="color: #8b92a0; font-size: 11px; margin-top: 8px;">Find this in N8N: Settings → API</p>'
+                    }}
+                ],
+                buttons: [
+                    { type: 'cancel', label: 'Cancel' },
+                    { type: 'submit', label: 'Save' }
+                ]
+            });
+
+            if (result && result.api_key) {
+                await Missive.storeSet('n8n_api_key', result.api_key);
+                return result.api_key;
             }
+            return null;
         }
-        
-        function resetApiKey() {
-            if (confirm('Remove saved API key and reload?')) {
-                localStorage.removeItem('n8n_api_key');
+
+        // Missive-compatible confirmation dialog
+        async function resetApiKey() {
+            const result = await Missive.openForm({
+                name: 'Reset API Key',
+                fields: [
+                    { type: 'html', data: { html: '<p>Remove saved API key and reload?</p>' }}
+                ],
+                buttons: [
+                    { type: 'cancel', label: 'Cancel' },
+                    { type: 'submit', label: 'Reset' }
+                ]
+            });
+
+            if (result !== null) {
+                await Missive.storeSet('n8n_api_key', null);
                 location.reload();
             }
+        }
+
+        // Initialize - load API key from Missive storage
+        async function init() {
+            API_KEY = await Missive.storeGet('n8n_api_key');
+
+            if (!API_KEY) {
+                API_KEY = await promptForApiKey();
+                if (!API_KEY) {
+                    document.getElementById('executions-container').innerHTML =
+                        '<div class="error-message">API key required. Refresh to enter key.</div>';
+                    return;
+                }
+            }
+
+            loadExecutions();
         }
         
         async function loadExecutions() {
@@ -551,12 +599,11 @@
         });
         
         document.getElementById('search').addEventListener('input', renderExecutions);
-        
+
         setInterval(loadExecutions, 30000);
-        
-        if (API_KEY) {
-            loadExecutions();
-        }
+
+        // Initialize the app
+        init();
     </script>
 </body>
 </html>
