@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(ssh hcd2016@192.168.4.159 \"docker ps --format ''{{.Names}}'' 2>/dev/null | grep -i n8n || systemctl status n8n 2>/dev/null | head -5 || ls -la /etc/systemd/system/*n8n* 2>/dev/null || echo ''checking pm2...'' && pm2 list 2>/dev/null | grep -i n8n\")",
+      "Bash(ssh:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "WebFetch(domain:dashboard.ngrok.com)",
+      "WebFetch(domain:ngrok.com)"
+    ]
+  }
+}
