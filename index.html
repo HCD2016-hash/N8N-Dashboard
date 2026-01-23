@@ -525,13 +525,31 @@
     const N8N_URL = 'https://n8n-hcd.ngrok.dev';
     // Webhook URL - API key is hardcoded in the N8N workflow for security
     const WEBHOOK_URL = 'https://n8n-hcd.ngrok.dev/webhook/executions';
+    const WORKFLOWS_WEBHOOK_URL = 'https://n8n-hcd.ngrok.dev/webhook/workflows';
     let API_KEY = null;
     let allExecutions = [];
+    let workflowNames = {}; // Cache workflow ID -> name mapping
     let currentFilter = 'all';
 
     // Fetch executions via webhook (CORS-friendly, API key is in workflow)
     async function fetchExecutions(apiKey, limit = 50) {
         return fetch(`${WEBHOOK_URL}?limit=${limit}`);
+    }
+
+    // Fetch workflows and cache names
+    async function fetchWorkflows() {
+        try {
+            const res = await fetch(WORKFLOWS_WEBHOOK_URL);
+            if (res.ok) {
+                const data = await res.json();
+                const workflows = data.data || [];
+                workflows.forEach(wf => {
+                    workflowNames[wf.id] = wf.name;
+                });
+            }
+        } catch (e) {
+            console.error('Failed to fetch workflows:', e);
+        }
     }
 
     // Elements
@@ -548,6 +566,7 @@
 
             if (API_KEY) {
                 showApp();
+                await fetchWorkflows(); // Load workflow names first
                 await loadExecutions();
             } else {
                 showAuth();
@@ -599,6 +618,7 @@
 
             API_KEY = key;
             showApp();
+            await fetchWorkflows();
             await loadExecutions();
         } catch (e) {
             console.error('Connection error:', e);
@@ -685,13 +705,13 @@
         const searchTerm = $('search').value.toLowerCase();
 
         let filtered = allExecutions.filter(ex => {
-            const matchesFilter = currentFilter === 'all' ||
-                (ex.finished === true && ex.stoppedAt && currentFilter === 'success') ||
-                (ex.finished === true && !ex.stoppedAt && currentFilter === 'error') ||
-                (ex.finished === false && currentFilter === 'running');
+            const status = getExecutionStatus(ex);
+            const matchesFilter = currentFilter === 'all' || status === currentFilter;
 
+            const workflowName = ex.workflowData?.name || workflowNames[ex.workflowId] || '';
             const matchesSearch = !searchTerm ||
-                ex.workflowData?.name?.toLowerCase().includes(searchTerm);
+                workflowName.toLowerCase().includes(searchTerm) ||
+                ex.id.includes(searchTerm);
 
             return matchesFilter && matchesSearch;
         });
@@ -705,17 +725,18 @@
             const status = getExecutionStatus(ex);
             const duration = ex.stoppedAt ?
                 Math.round((new Date(ex.stoppedAt) - new Date(ex.startedAt)) / 1000) : null;
+            const workflowName = ex.workflowData?.name || workflowNames[ex.workflowId] || `Workflow ${ex.workflowId?.slice(0, 8) || 'Unknown'}`;
 
             return `
-                <div class="execution ${status}" onclick="openExecution('${ex.id}')" style="animation-delay: ${index * 0.05}s">
+                <div class="execution ${status}" onclick="openExecution('${ex.id}', '${ex.workflowId}')" style="animation-delay: ${index * 0.05}s">
                     <div class="execution-header">
-                        <div class="workflow-name">${escapeHtml(ex.workflowData?.name || 'Unknown Workflow')}</div>
+                        <div class="workflow-name">${escapeHtml(workflowName)}</div>
                         <div class="status ${status}">${status}</div>
                     </div>
                     <div class="execution-meta">
                         <div class="meta-item">${formatTime(ex.startedAt)}</div>
                         ${duration ? `<div class="meta-item">${duration}s</div>` : ''}
-                        <div class="meta-item">ID: ${ex.id.slice(0, 8)}</div>
+                        <div class="meta-item">ID: ${ex.id}</div>
                     </div>
                 </div>
             `;
@@ -723,9 +744,15 @@
     }
 
     function getExecutionStatus(execution) {
+        // Use the status field from API if available
+        if (execution.status) {
+            if (execution.status === 'success') return 'success';
+            if (execution.status === 'error' || execution.status === 'crashed') return 'error';
+            if (execution.status === 'running' || execution.status === 'waiting') return 'running';
+        }
+        // Fallback to old logic
         if (!execution.finished) return 'running';
-        if (execution.stoppedAt) return 'success';
-        return 'error';
+        return execution.stoppedAt ? 'success' : 'error';
     }
 
     function formatTime(timestamp) {
@@ -752,11 +779,12 @@
         return div.innerHTML;
     }
 
-    function openExecution(id) {
+    function openExecution(id, workflowId) {
+        const url = `${N8N_URL}/workflow/${workflowId}/executions/${id}`;
         if (typeof Missive !== 'undefined') {
-            Missive.openURL(`${N8N_URL}/execution/${id}`);
+            Missive.openURL(url);
         } else {
-            window.open(`${N8N_URL}/execution/${id}`, '_blank');
+            window.open(url, '_blank');
         }
     }
 
