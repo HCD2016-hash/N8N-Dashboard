@@ -524,32 +524,15 @@
 <script>
     const N8N_URL = 'https://n8n-hcd.ngrok.dev';
     // Webhook URL - API key is hardcoded in the N8N workflow for security
+    // Response includes workflowName joined from workflows API
     const WEBHOOK_URL = 'https://n8n-hcd.ngrok.dev/webhook/executions';
-    const WORKFLOWS_WEBHOOK_URL = 'https://n8n-hcd.ngrok.dev/webhook/workflows';
     let API_KEY = null;
     let allExecutions = [];
-    let workflowNames = {}; // Cache workflow ID -> name mapping
     let currentFilter = 'all';
 
-    // Fetch executions via webhook (CORS-friendly, API key is in workflow)
+    // Fetch executions via webhook (CORS-friendly, includes workflow names)
     async function fetchExecutions(apiKey, limit = 50) {
         return fetch(`${WEBHOOK_URL}?limit=${limit}`);
-    }
-
-    // Fetch workflows and cache names
-    async function fetchWorkflows() {
-        try {
-            const res = await fetch(WORKFLOWS_WEBHOOK_URL);
-            if (res.ok) {
-                const data = await res.json();
-                const workflows = data.data || [];
-                workflows.forEach(wf => {
-                    workflowNames[wf.id] = wf.name;
-                });
-            }
-        } catch (e) {
-            console.error('Failed to fetch workflows:', e);
-        }
     }
 
     // Elements
@@ -566,7 +549,6 @@
 
             if (API_KEY) {
                 showApp();
-                await fetchWorkflows(); // Load workflow names first
                 await loadExecutions();
             } else {
                 showAuth();
@@ -618,7 +600,6 @@
 
             API_KEY = key;
             showApp();
-            await fetchWorkflows();
             await loadExecutions();
         } catch (e) {
             console.error('Connection error:', e);
@@ -708,7 +689,7 @@
             const status = getExecutionStatus(ex);
             const matchesFilter = currentFilter === 'all' || status === currentFilter;
 
-            const workflowName = ex.workflowData?.name || workflowNames[ex.workflowId] || '';
+            const workflowName = ex.workflowName || ex.workflowData?.name || '';
             const matchesSearch = !searchTerm ||
                 workflowName.toLowerCase().includes(searchTerm) ||
                 ex.id.includes(searchTerm);
@@ -725,7 +706,7 @@
             const status = getExecutionStatus(ex);
             const duration = ex.stoppedAt ?
                 Math.round((new Date(ex.stoppedAt) - new Date(ex.startedAt)) / 1000) : null;
-            const workflowName = ex.workflowData?.name || workflowNames[ex.workflowId] || `Workflow ${ex.workflowId?.slice(0, 8) || 'Unknown'}`;
+            const workflowName = ex.workflowName || ex.workflowData?.name || `Workflow ${ex.workflowId?.slice(0, 8) || 'Unknown'}`;
 
             return `
                 <div class="execution ${status}" onclick="openExecution('${ex.id}', '${ex.workflowId}')" style="animation-delay: ${index * 0.05}s">
@@ -781,8 +762,15 @@
 
     function openExecution(id, workflowId) {
         const url = `${N8N_URL}/workflow/${workflowId}/executions/${id}`;
-        if (typeof Missive !== 'undefined') {
-            Missive.openURL(url);
+        console.log('Opening execution:', url);
+
+        if (typeof Missive !== 'undefined' && Missive.openURL) {
+            try {
+                Missive.openURL(url);
+            } catch (e) {
+                console.error('Missive.openURL failed:', e);
+                window.open(url, '_blank');
+            }
         } else {
             window.open(url, '_blank');
         }
