@@ -523,26 +523,15 @@
 <script src="https://integrations.missiveapp.com/missive.js"></script>
 <script>
     const N8N_URL = 'https://n8n-hcd.ngrok.dev';
-    // Webhook URL for CORS-friendly API access (create workflow in N8N)
+    // Webhook URL - API key is hardcoded in the N8N workflow for security
     const WEBHOOK_URL = 'https://n8n-hcd.ngrok.dev/webhook/executions';
     let API_KEY = null;
     let allExecutions = [];
     let currentFilter = 'all';
 
-    // Fetch executions - uses webhook for CORS support in iframe
+    // Fetch executions via webhook (CORS-friendly, API key is in workflow)
     async function fetchExecutions(apiKey, limit = 50) {
-        // Try webhook first (has CORS support)
-        try {
-            const res = await fetch(`${WEBHOOK_URL}?apiKey=${encodeURIComponent(apiKey)}&limit=${limit}`);
-            if (res.ok) return res;
-        } catch (e) {
-            console.log('Webhook failed, trying direct API');
-        }
-
-        // Fallback to direct API (works outside iframe)
-        return fetch(`${N8N_URL}/api/v1/executions?limit=${limit}`, {
-            headers: { 'X-N8N-API-KEY': apiKey }
-        });
+        return fetch(`${WEBHOOK_URL}?limit=${limit}`);
     }
 
     // Elements
