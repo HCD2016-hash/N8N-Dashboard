@@ -125,6 +125,18 @@
             text-decoration: underline;
         }
 
+        .auth-error {
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: rgba(255, 0, 85, 0.15);
+            border: 1px solid var(--accent-red);
+            border-radius: 4px;
+            color: var(--accent-red);
+            font-size: 11px;
+            max-width: 300px;
+            text-align: left;
+        }
+
         /* Main App */
         @keyframes scanline {
             0% { transform: translateY(-100%); }
@@ -476,6 +488,7 @@
     <p class="auth-help">
         Find your key in N8N: Settings → API
     </p>
+    <p id="auth-error" class="auth-error hidden"></p>
 </div>
 
 <!-- Main App -->
@@ -551,8 +564,15 @@
     // Auth - Connect
     $('connect-btn').onclick = async () => {
         const key = $('token-input').value.trim();
-        if (!key) return;
+        const errorEl = $('auth-error');
 
+        if (!key) {
+            errorEl.textContent = 'Please enter an API key';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+
+        errorEl.classList.add('hidden');
         $('connect-btn').textContent = 'Connecting...';
 
         try {
@@ -561,7 +581,9 @@
                 headers: { 'X-N8N-API-KEY': key }
             });
 
-            if (!res.ok) throw new Error('Invalid API key');
+            if (!res.ok) {
+                throw new Error(`API returned ${res.status}: ${res.statusText}`);
+            }
 
             // Save the key
             if (typeof Missive !== 'undefined') {
@@ -574,24 +596,46 @@
             showApp();
             await loadExecutions();
         } catch (e) {
-            alert('Invalid API key or N8N not reachable');
+            console.error('Connection error:', e);
+            let errorMsg = 'Connection failed. ';
+            if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+                errorMsg += 'CORS blocked or N8N unreachable. Check that N8N allows requests from this origin.';
+            } else {
+                errorMsg += e.message;
+            }
+            errorEl.textContent = errorMsg;
+            errorEl.classList.remove('hidden');
             $('connect-btn').textContent = 'Connect';
         }
     };
 
     // Logout / Disconnect
     $('logout-btn').onclick = async () => {
-        if (!confirm('Disconnect and clear API key?')) return;
-
+        // Use Missive.openForm for confirmation in iframe context
         if (typeof Missive !== 'undefined') {
-            await Missive.storeSet('n8n_api_key', null);
+            Missive.openForm({
+                title: 'Disconnect',
+                note: 'Clear your API key and disconnect from N8N?',
+                fields: [],
+                buttons: [
+                    { type: 'cancel', label: 'Cancel' },
+                    { type: 'submit', label: 'Disconnect' }
+                ],
+                onSubmit: async () => {
+                    await Missive.storeSet('n8n_api_key', null);
+                    API_KEY = null;
+                    showAuth();
+                    $('token-input').value = '';
+                }
+            });
         } else {
+            // Fallback for non-Missive context
+            if (!window.confirm('Disconnect and clear API key?')) return;
             localStorage.removeItem('n8n_api_key');
+            API_KEY = null;
+            showAuth();
+            $('token-input').value = '';
         }
-
-        API_KEY = null;
-        showAuth();
-        $('token-input').value = '';
     };
 
     async function loadExecutions() {
