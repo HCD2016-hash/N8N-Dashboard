@@ -523,9 +523,18 @@
 <script src="https://integrations.missiveapp.com/missive.js"></script>
 <script>
     const N8N_URL = 'https://n8n-hcd.ngrok.dev';
+    const CORS_PROXY = 'https://corsproxy.io/?';
     let API_KEY = null;
     let allExecutions = [];
     let currentFilter = 'all';
+
+    // Wrap URL with CORS proxy for Missive iframe context
+    function proxyUrl(url) {
+        if (typeof Missive !== 'undefined') {
+            return CORS_PROXY + encodeURIComponent(url);
+        }
+        return url;
+    }
 
     // Elements
     const $ = id => document.getElementById(id);
@@ -577,7 +586,7 @@
 
         try {
             // Test the API key
-            const res = await fetch(`${N8N_URL}/api/v1/executions?limit=1`, {
+            const res = await fetch(proxyUrl(`${N8N_URL}/api/v1/executions?limit=1`), {
                 headers: { 'X-N8N-API-KEY': key }
             });
 
@@ -650,7 +659,7 @@
         refreshBtn.classList.add('loading');
 
         try {
-            const response = await fetch(`${N8N_URL}/api/v1/executions?limit=50`, {
+            const response = await fetch(proxyUrl(`${N8N_URL}/api/v1/executions?limit=50`), {
                 headers: {
                     'X-N8N-API-KEY': API_KEY
                 }
