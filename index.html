@@ -792,11 +792,6 @@
     // Refresh button
     $('refresh-btn').onclick = loadExecutions;
 
-    // Auto-refresh every 30s
-    setInterval(() => {
-        if (API_KEY) loadExecutions();
-    }, 30000);
-
     // Start
     init();
 </script>
